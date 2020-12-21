@@ -1,6 +1,7 @@
-from elasticsearch import ElasticsearchException,Elasticsearch
+from elasticsearch import Elasticsearch
 from fastapi import FastAPI
 import uvicorn
+import json
 
 app = FastAPI()
 es = Elasticsearch('http://localhost:9200/')
@@ -26,5 +27,15 @@ def register(name:str,username:str,email:str,password:str,number:str):
     data = es.index(index="ta_identity",id=newId, body={"data":{"name":name,"id":username,"email":email,"password":password,"number":number}})
     return {"status":"data has been created"}
 
+@app.delete("/delete_account")
+def delete_account(username:str):
+    get_id = es.search(index="ta_identity",body={"query":{"match":{"data.id":username}}})
+    data = json.dumps(get_id['hits']['hits'])
+    x= json.loads(data)
+    id = x[0]['_id']
+    es.delete(index="ta_identity", id=id)
+    return "delete "+id+" has success"
+
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8899)
+
